@@ -4,3 +4,6 @@
 [submodule "lib/FreeRTOS/coreMQTT-Agent"]
 	path = lib/FreeRTOS/coreMQTT-Agent
 	url = https://github.com/FreeRTOS/coreMQTT-Agent
+[submodule "lib/ThirdParty/janpatch"]
+	path = lib/ThirdParty/janpatch
+	url = https://github.com/janjongboom/janpatch
