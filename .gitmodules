@@ -7,3 +7,6 @@
 [submodule "lib/ThirdParty/janpatch"]
 	path = lib/ThirdParty/janpatch
 	url = https://github.com/janjongboom/janpatch
+[submodule "lib/FreeRTOS/backoffAlgorithm"]
+	path = lib/FreeRTOS/backoffAlgorithm
+	url = https://github.com/FreeRTOS/backoffAlgorithm
