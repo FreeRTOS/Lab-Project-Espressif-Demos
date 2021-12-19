@@ -1,12 +1,12 @@
 [submodule "lib/AWS/ota-for-aws-iot-embedded-sdk"]
-	path = lib/AWS/ota-for-aws-iot-embedded-sdk
+	path = libs/AWS/ota/ota-for-aws-iot-embedded-sdk
 	url = https://github.com/aws/ota-for-aws-iot-embedded-sdk
 [submodule "lib/FreeRTOS/coreMQTT-Agent"]
-	path = lib/FreeRTOS/coreMQTT-Agent
+	path = libs/FreeRTOS/coreMQTT-Agent/coreMQTT-Agent
 	url = https://github.com/FreeRTOS/coreMQTT-Agent
 [submodule "lib/ThirdParty/janpatch"]
-	path = lib/ThirdParty/janpatch
+	path = libs/ThirdParty/janpatch/janpatch
 	url = https://github.com/janjongboom/janpatch
 [submodule "lib/FreeRTOS/backoffAlgorithm"]
-	path = lib/FreeRTOS/backoffAlgorithm
+	path = libs/FreeRTOS/backoffAlgorithm/backoffAlgorithm
 	url = https://github.com/FreeRTOS/backoffAlgorithm
