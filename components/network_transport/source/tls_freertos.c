@@ -29,7 +29,7 @@
 #include <string.h>
 
 /* FreeRTOS includes. */
-#include "freertos/FreeRTOS.h"
+#include "FreeRTOS.h"
 
 /* TLS transport header. */
 #include "tls_freertos.h"

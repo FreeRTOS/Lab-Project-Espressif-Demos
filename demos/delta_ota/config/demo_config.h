@@ -28,7 +28,7 @@
 #define DEMO_CONFIG_H
 
 /* FreeRTOS config include. */
-#include "freertos/FreeRTOSConfig.h"
+#include "FreeRTOSConfig.h"
 
 /**************************************************/
 /******* DO NOT CHANGE the following order ********/
