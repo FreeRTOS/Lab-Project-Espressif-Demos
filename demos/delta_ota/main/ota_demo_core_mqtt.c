@@ -41,7 +41,7 @@
 #include "task.h"
 #include "semphr.h"
 
-#include "iot_network.h"
+//#include "iot_network.h"
 
 /* CoreMQTT-Agent APIS for running MQTT in a multithreaded environment. */
 #include "freertos_agent_message.h"
@@ -66,7 +66,7 @@
 #include "transport_interface.h"
 
 /* Transport interface implementation include header for TLS. */
-#include "transport_secure_sockets.h"
+//#include "transport_secure_sockets.h"
 
 /* Include header for connection configurations. */
 #include "aws_clientcredential.h"
@@ -90,6 +90,7 @@
 /* Includes the OTA Application version number. */
 #include "ota_appversion32.h"
 
+#include "tls_freertos.h"
 /*------------- Demo configurations -------------------------*/
 
 /** Note: The device client certificate and private key credentials are
@@ -365,19 +366,6 @@
 #define MILLISECONDS_PER_TICK                       ( MILLISECONDS_PER_SECOND / configTICK_RATE_HZ )
 
 /**
- * @brief Each compilation unit that consumes the NetworkContext must define it.
- * It should contain a single pointer to the type of your desired transport.
- * When using multiple transports in the same compilation unit, define this
- * pointer as void *.
- *
- * @note Transport stacks are defined in amazon-freertos/libraries/abstractions/transport/secure_sockets/transport_secure_sockets.h.
- */
-struct NetworkContext
-{
-    SecureSocketsTransportParams_t * pParams;
-};
-
-/**
  * @brief Structure used to store the topic filter to ota callback mappings.
  */
 typedef struct OtaTopicFilterCallback
@@ -432,11 +420,6 @@ static MQTTAgentMessageInterface_t xMessageInterface;
  * As this is a global array, it will be intialized to 0 by default.
  */
 static SubscriptionElement_t pxGlobalSubscriptionList[ SUBSCRIPTION_MANAGER_MAX_SUBSCRIPTIONS ];
-
-/**
- * @brief The parameters for the network context using a TLS channel.
- */
-static SecureSocketsTransportParams_t xSecureSocketsTransportParams;
 
 /**
  * @brief Network connection context used in this demo for MQTT connection.
@@ -502,6 +485,16 @@ static OtaAppBuffer_t xOtaBuffer =
     .decodeMemorySize   = otaconfigFILE_BLOCK_SIZE,
     .pFileBitmap        = pucBitmap,
     .fileBitmapSize     = OTA_MAX_BLOCK_BITMAP_SIZE,
+};
+
+/* Definition of the appFirmwareVersion variable that is used by the OTA
+ * library and is declared in the ota_appversion32.h file. The values for these
+ * firmware versions are set in the ota_demo_config.h file. */
+const AppVersion32_t appFirmwareVersion =
+{
+    .u.x.major = APP_VERSION_MAJOR,
+    .u.x.minor = APP_VERSION_MINOR,
+    .u.x.build = APP_VERSION_BUILD
 };
 
 /*-----------------------------------------------------------*/
@@ -1263,8 +1256,8 @@ static MQTTStatus_t prvMqttAgentInit( void )
 
     /* Fill in Transport Interface send and receive function pointers. */
     xTransport.pNetworkContext = &xNetworkContextMqtt;
-    xTransport.send = SecureSocketsTransport_Send;
-    xTransport.recv = SecureSocketsTransport_Recv;
+    xTransport.send = TLS_FreeRTOS_send;
+    xTransport.recv = TLS_FreeRTOS_recv;
 
     /* Initialize MQTT Agent. */
     xReturn = MQTTAgent_Init( &xGlobalMqttAgentContext,
@@ -1282,27 +1275,20 @@ static MQTTStatus_t prvMqttAgentInit( void )
 
 static BaseType_t prvCreateSocketConnectionToMQTTBroker( NetworkContext_t * pxNetworkContext )
 {
-    ServerInfo_t xServerInfo = { 0 };
-    SocketsConfig_t xSocketsConfig = { 0 };
+    NetworkCredentials_t xNetworkCredentials = { 0 };
     BaseType_t xStatus = pdPASS;
-    TransportSocketStatus_t xNetworkStatus = TRANSPORT_SOCKET_STATUS_SUCCESS;
+    TlsTransportStatus_t xTlsTransportStatus = TLS_TRANSPORT_SUCCESS;
     BackoffAlgorithmContext_t xReconnectParams;
 
-    /* Set the credentials for establishing a TLS connection. */
-    /* Initializer server information. */
-    xServerInfo.pHostName = democonfigMQTT_BROKER_ENDPOINT;
-    xServerInfo.hostNameLength = strlen( democonfigMQTT_BROKER_ENDPOINT );
-    xServerInfo.port = democonfigMQTT_BROKER_PORT;
-
     /* Configure credentials for TLS mutual authenticated session. */
-    xSocketsConfig.enableTls = true;
-    xSocketsConfig.pAlpnProtos = NULL;
-    xSocketsConfig.maxFragmentLength = 0;
-    xSocketsConfig.disableSni = false;
-    xSocketsConfig.pRootCa = democonfigROOT_CA_PEM;
-    xSocketsConfig.rootCaSize = sizeof( democonfigROOT_CA_PEM );
-    xSocketsConfig.sendTimeoutMs = otaexampleMQTT_TRANSPORT_SEND_RECV_TIMEOUT_MS;
-    xSocketsConfig.recvTimeoutMs = otaexampleMQTT_TRANSPORT_SEND_RECV_TIMEOUT_MS;
+    xNetworkCredentials.pAlpnProtos = NULL;
+    xNetworkCredentials.disableSni = false;
+    xNetworkCredentials.pRootCa = ( const uint8_t * ) democonfigROOT_CA_PEM;
+    xNetworkCredentials.rootCaSize = sizeof( democonfigROOT_CA_PEM );
+    xNetworkCredentials.pClientCert = keyCLIENT_CERTIFICATE_PEM;
+    xNetworkCredentials.clientCertSize = sizeof( keyCLIENT_CERTIFICATE_PEM );
+    xNetworkCredentials.pPrivateKey = keyCLIENT_PRIVATE_KEY_PEM;
+    xNetworkCredentials.privateKeySize = sizeof( keyCLIENT_CERTIFICATE_PEM );
 
     /* Initialize reconnect attempts and interval. */
     BackoffAlgorithm_InitializeParams( &xReconnectParams,
@@ -1323,15 +1309,18 @@ static BaseType_t prvCreateSocketConnectionToMQTTBroker( NetworkContext_t * pxNe
                    democonfigMQTT_BROKER_ENDPOINT,
                    democonfigMQTT_BROKER_PORT ) );
         /* Attempt to create a mutually authenticated TLS connection. */
-        xNetworkStatus = SecureSocketsTransport_Connect( pxNetworkContext,
-                                                         &xServerInfo,
-                                                         &xSocketsConfig );
+        xTlsTransportStatus = TLS_FreeRTOS_Connect( pxNetworkContext,
+                                                    democonfigMQTT_BROKER_ENDPOINT,
+                                                    democonfigMQTT_BROKER_PORT,
+                                                    &( xNetworkCredentials ),
+                                                    otaexampleMQTT_TRANSPORT_SEND_RECV_TIMEOUT_MS,
+                                                    otaexampleMQTT_TRANSPORT_SEND_RECV_TIMEOUT_MS );
 
-        if( xNetworkStatus != TRANSPORT_SOCKET_STATUS_SUCCESS )
+        if( xTlsTransportStatus != TLS_TRANSPORT_SUCCESS )
         {
             xStatus = prvBackoffForRetry( &xReconnectParams );
         }
-    } while( ( xNetworkStatus != TRANSPORT_SOCKET_STATUS_SUCCESS ) && ( xStatus == pdPASS ) );
+    } while( ( xTlsTransportStatus != TLS_TRANSPORT_SUCCESS ) && ( xStatus == pdPASS ) );
 
     return xStatus;
 }
@@ -1376,8 +1365,6 @@ static MQTTStatus_t prvMQTTConnect( void )
 static BaseType_t prvConnectToMQTTBroker( void )
 {
     BaseType_t xStatus = pdFAIL;
-
-    xNetworkContextMqtt.pParams = &xSecureSocketsTransportParams;
 
     /* Attempt to connect to the MQTT broker. If connection fails, retry after
      * a timeout. Timeout value will be exponentially increased till the maximum
@@ -1452,7 +1439,7 @@ static void prvDisconnectFromMQTTBroker( void )
                      pdMS_TO_TICKS( MQTT_AGENT_MS_TO_WAIT_FOR_NOTIFICATION ) );
 
     /* End TLS session, then close TCP connection. */
-    ( void ) SecureSocketsTransport_Disconnect( &xNetworkContextMqtt );
+    ( void ) TLS_FreeRTOS_Disconnect( &xNetworkContextMqtt );
 }
 /*-----------------------------------------------------------*/
 
@@ -1687,7 +1674,7 @@ static void prvMQTTAgentTask( void * pParam )
             LogInfo( ( "Suspended OTA agent." ) );
 
             /* Reconnect TCP. */
-            ( void ) SecureSocketsTransport_Disconnect( &xNetworkContextMqtt );
+            ( void ) TLS_FreeRTOS_Disconnect( &xNetworkContextMqtt );
 
             xResult = prvConnectToMQTTBroker();
             configASSERT( xResult == pdPASS );

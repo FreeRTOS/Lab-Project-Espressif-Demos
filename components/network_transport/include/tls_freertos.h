@@ -48,10 +48,6 @@
     #define LIBRARY_LOG_LEVEL    LOG_ERROR
 #endif
 
-/* Map the SdkLog macro to the logging function to enable logging
- * on Windows simulator. */
-#define SdkLog( message )    printf message
-
 #include "logging_stack.h"
 
 /************ End of logging configuration ****************/

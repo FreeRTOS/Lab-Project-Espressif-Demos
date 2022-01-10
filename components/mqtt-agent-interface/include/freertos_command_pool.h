@@ -35,6 +35,13 @@
 #include "core_mqtt_agent.h"
 
 /**
+ * @brief The number of structures to allocate in the command pool.
+ */
+#ifndef MQTT_COMMAND_CONTEXTS_POOL_SIZE
+    #define MQTT_COMMAND_CONTEXTS_POOL_SIZE    ( 10U )
+#endif
+
+/**
  * @brief Initialize the common task pool. Not thread safe.
  */
 void Agent_InitializePool( void );

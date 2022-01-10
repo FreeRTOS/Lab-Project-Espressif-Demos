@@ -967,7 +967,7 @@ static size_t prvfwrite( const void *buffer, size_t size, size_t count, esp_part
 {
     esp_err_t esp_ret = ESP_FAIL;
 
-    int esp_ret = esp_partition_write( pCtx->partition, pCtx->offset, buffer, size * count );
+    esp_ret = esp_partition_write( pCtx->partition, pCtx->offset, buffer, size * count );
 
     if ( esp_ret != ESP_OK )
     {

@@ -10,3 +10,6 @@
 [submodule "lib/FreeRTOS/backoffAlgorithm"]
 	path = libs/FreeRTOS/backoffAlgorithm/backoffAlgorithm
 	url = https://github.com/FreeRTOS/backoffAlgorithm
+[submodule "components/corePKCS11"]
+	path = libs/FreeRTOS/corePKCS11/corePKCS11
+	url = https://github.com/FreeRTOS/corePKCS11.git
