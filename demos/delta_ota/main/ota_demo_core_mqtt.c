@@ -1288,7 +1288,7 @@ static BaseType_t prvCreateSocketConnectionToMQTTBroker( NetworkContext_t * pxNe
     xNetworkCredentials.pClientCert = keyCLIENT_CERTIFICATE_PEM;
     xNetworkCredentials.clientCertSize = sizeof( keyCLIENT_CERTIFICATE_PEM );
     xNetworkCredentials.pPrivateKey = keyCLIENT_PRIVATE_KEY_PEM;
-    xNetworkCredentials.privateKeySize = sizeof( keyCLIENT_CERTIFICATE_PEM );
+    xNetworkCredentials.privateKeySize = sizeof( keyCLIENT_PRIVATE_KEY_PEM );
 
     /* Initialize reconnect attempts and interval. */
     BackoffAlgorithm_InitializeParams( &xReconnectParams,
