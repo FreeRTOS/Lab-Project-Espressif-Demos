@@ -65,33 +65,4 @@
     #define clientcredentialGREENGRASS_DISCOVERY_PORT    8443
 #endif
 
-/*
- * @brief Wi-Fi network to join.
- *
- * @todo If you are using Wi-Fi, set this to your network name.
- */
-#ifndef clientcredentialWIFI_SSID
-    #define clientcredentialWIFI_SSID    ""
-#endif
-
-/*
- * @brief Password needed to join Wi-Fi network.
- * @todo If you are using WPA, set this to your network password.
- */
-#ifndef clientcredentialWIFI_PASSWORD
-    #define clientcredentialWIFI_PASSWORD    ""
-#endif
-
-/*
- * @brief Wi-Fi network security type.
- *
- * @see WIFISecurity_t.
- *
- * @note Possible values are eWiFiSecurityOpen, eWiFiSecurityWEP, eWiFiSecurityWPA,
- * eWiFiSecurityWPA2 (depending on the support of your device Wi-Fi radio).
- */
-#ifndef clientcredentialWIFI_SECURITY
-    #define clientcredentialWIFI_SECURITY    eWiFiSecurityWPA2
-#endif
-
 #endif /* ifndef __AWS_CLIENTCREDENTIAL__H__ */
