@@ -55,26 +55,11 @@
     #error "Please define LIBRARY_LOG_NAME for the library."
 #endif
 
-/* Metadata information to prepend to every log message. */
-#ifndef LOG_METADATA_FORMAT
-    #define LOG_METADATA_FORMAT    "[%s:%d] "                  /**< @brief Format of metadata prefix in log messages. */
-#endif
-
-#ifndef LOG_METADATA_ARGS
-    #define LOG_METADATA_ARGS    __FUNCTION__, __LINE__  /**< @brief Arguments into the metadata logging prefix format. */
-#endif
-
-/**
- * @brief Common macro that maps all the logging interfaces,
- * (#LogDebug, #LogInfo, #LogWarn, #LogError) to the platform-specific logging
- * function.
- *
- * @note The default definition of the macro is an empty definition that does not
- * generate any logging.
- */
-#ifndef SdkLog
-    #define SdkLog( string )
-#endif
+/* Functions to map the logging output to esp logging. */
+void app_esp_log_debug_write(const char *format, ...);
+void app_esp_log_info_write(const char *format, ...);
+void app_esp_log_warn_write(const char *format, ...);
+void app_esp_log_error_write(const char *format, ...);
 
 /**
  * Disable definition of logging interface macros when generating doxygen output,
@@ -91,28 +76,28 @@
 #else
     #if LIBRARY_LOG_LEVEL == LOG_DEBUG
         /* All log level messages will logged. */
-        #define LogError( message )    SdkLog( ( "[ERROR] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogWarn( message )     SdkLog( ( "[WARN] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogInfo( message )     SdkLog( ( "[INFO] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogDebug( message )    SdkLog( ( "[DEBUG] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
+        #define LogError( message )    app_esp_log_error_write message
+        #define LogWarn( message )     app_esp_log_warn_write message
+        #define LogInfo( message )     app_esp_log_info_write message
+        #define LogDebug( message )    app_esp_log_debug_write message
 
     #elif LIBRARY_LOG_LEVEL == LOG_INFO
         /* Only INFO, WARNING and ERROR messages will be logged. */
-        #define LogError( message )    SdkLog( ( "[ERROR] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogWarn( message )     SdkLog( ( "[WARN] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogInfo( message )     SdkLog( ( "[INFO] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
+        #define LogError( message )    app_esp_log_error_write message
+        #define LogWarn( message )     app_esp_log_warn_write message
+        #define LogInfo( message )     app_esp_log_info_write message
         #define LogDebug( message )
 
     #elif LIBRARY_LOG_LEVEL == LOG_WARN
         /* Only WARNING and ERROR messages will be logged.*/
-        #define LogError( message )    SdkLog( ( "[ERROR] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogWarn( message )     SdkLog( ( "[WARN] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
+        #define LogError( message )    app_esp_log_error_write message
+        #define LogWarn( message )     app_esp_log_warn_write message
         #define LogInfo( message )
         #define LogDebug( message )
 
     #elif LIBRARY_LOG_LEVEL == LOG_ERROR
         /* Only ERROR messages will be logged. */
-        #define LogError( message )    SdkLog( ( "[ERROR] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
+        #define LogError( message )    app_esp_log_error_write message
         #define LogWarn( message )
         #define LogInfo( message )
         #define LogDebug( message )
