@@ -966,7 +966,7 @@ static size_t prvfwrite( const void *buffer, size_t size, size_t count, esp_part
 
     if ( esp_ret != ESP_OK )
     {
-        LogError( ( "esp_partition_write error: %d\n", r ) );
+        LogError( ( "esp_partition_write error: %d\n", esp_ret ) );
         return 0;
     }
 

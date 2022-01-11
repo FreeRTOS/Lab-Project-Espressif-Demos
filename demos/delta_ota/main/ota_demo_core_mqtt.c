@@ -1285,9 +1285,9 @@ static BaseType_t prvCreateSocketConnectionToMQTTBroker( NetworkContext_t * pxNe
     xNetworkCredentials.disableSni = false;
     xNetworkCredentials.pRootCa = ( const uint8_t * ) democonfigROOT_CA_PEM;
     xNetworkCredentials.rootCaSize = sizeof( democonfigROOT_CA_PEM );
-    xNetworkCredentials.pClientCert = keyCLIENT_CERTIFICATE_PEM;
+    xNetworkCredentials.pClientCert = ( const uint8_t * ) keyCLIENT_CERTIFICATE_PEM;
     xNetworkCredentials.clientCertSize = sizeof( keyCLIENT_CERTIFICATE_PEM );
-    xNetworkCredentials.pPrivateKey = keyCLIENT_PRIVATE_KEY_PEM;
+    xNetworkCredentials.pPrivateKey = ( const uint8_t * ) keyCLIENT_PRIVATE_KEY_PEM;
     xNetworkCredentials.privateKeySize = sizeof( keyCLIENT_PRIVATE_KEY_PEM );
 
     /* Initialize reconnect attempts and interval. */
