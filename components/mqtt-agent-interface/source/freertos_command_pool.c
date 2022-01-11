@@ -64,7 +64,7 @@ static MQTTAgentMessageContext_t commandStructMessageCtx;
 /**
  * @brief Initialization status of the queue.
  */
-static volatile uint8_t initStatus = QUEUE_NOT_INITIALIZED;
+static uint8_t initStatus = QUEUE_NOT_INITIALIZED;
 
 /*-----------------------------------------------------------*/
 

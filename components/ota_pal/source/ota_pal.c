@@ -575,7 +575,7 @@ end:
     /* Free the signer certificate that we now own after prvReadAndAssumeCertificate(). */
     if (pucSignerCert != NULL)
     {
-        vPortFree(pucSignerCert);
+        vPortFree(( void* )pucSignerCert);
     }
 
     return result;
@@ -921,11 +921,6 @@ static int prvfseek( esp_partition_context_t *fileCtx, long int offset, int when
             return -1;
     }
 
-    if ( fileCtx->offset < 0 )
-    {
-        return -1;
-    }
-        
     if ( fileCtx->offset > fileCtx->size )
     {
         return -1;
@@ -996,7 +991,7 @@ static uint32_t prvGetRunningPartitionSize( void )
     /* Get running partition.*/
     const esp_partition_t *running = esp_ota_get_running_partition();
 
-    if (running)
+    if( running == NULL )
     {
         return 0;
     }
@@ -1061,18 +1056,19 @@ static int prvApplyPatch( void )
      /* Set janpatch context.*/
     janpatch_ctx jCtx =
     {
-        { source_buffer, PATCH_BUFFER_SIZE },
-        { patch_buffer, PATCH_BUFFER_SIZE } ,
-        { target_buffer, PATCH_BUFFER_SIZE },
+        { source_buffer, PATCH_BUFFER_SIZE, 0xffffffff, 0, NULL, 0 },
+        { patch_buffer, PATCH_BUFFER_SIZE, 0xffffffff, 0, NULL, 0 } ,
+        { target_buffer, PATCH_BUFFER_SIZE, 0xffffffff, 0, NULL, 0 },
         &prvfread,
         &prvfwrite,
         &prvfseek,
         &prvftell,
-        &prvPatchProgress
+        &prvPatchProgress,
+        0
     };
 
     /* Patch the base version.*/
-    ret = janpatch( jCtx, &targetCtx, &patchCtx, &targetCtx );
+    ret = janpatch( jCtx, &sourceCtx, &patchCtx, &targetCtx );
     if( ret == 0 )
     {
         ota_ctx.data_write_len = targetCtx.offset;
