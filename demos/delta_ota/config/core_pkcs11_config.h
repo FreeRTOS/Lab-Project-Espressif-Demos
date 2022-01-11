@@ -54,9 +54,9 @@
     #define LIBRARY_LOG_NAME    "PKCS11"
 #endif
 
-#ifndef LIBRARY_LOG_LEVEL
-    #define LIBRARY_LOG_LEVEL    LOG_ERROR
-#endif
+/* Disable logging for corePKCS11 library. */
+#define LIBRARY_LOG_LEVEL    LOG_NONE
+#define DISABLE_LOGGING
 
 #include "logging_stack.h"
 
