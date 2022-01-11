@@ -58,6 +58,7 @@
 
 /* Include PKCS11 helper for random number generation. */
 #include "pkcs11_helpers.h"
+#include "core_pkcs11.h"
 
 /*Include backoff algorithm header for retry logic.*/
 #include "backoff_algorithm.h"
@@ -1874,6 +1875,7 @@ int RunOtaCoreMqttDemo( void )
 {
     BaseType_t xDemoStatus = pdFAIL;
     BaseType_t xMqttInitialized = pdFALSE;
+    CK_RV xPKCS11Result = CKR_OK;
 
     LogInfo( ( "OTA over MQTT demo, Application version %u.%u.%u",
                appFirmwareVersion.u.x.major,
@@ -1890,6 +1892,19 @@ int RunOtaCoreMqttDemo( void )
     else
     {
         xDemoStatus = pdPASS;
+    }
+    
+    /****************************** Init PKCS11 ****************************/
+    
+    if( xDemoStatus == pdPASS )
+    {
+        xPKCS11Result = xInitializePKCS11();
+        
+        if( ( xPKCS11Result != CKR_OK ) &&  ( xPKCS11Result != CKR_CRYPTOKI_ALREADY_INITIALIZED ) )
+        {
+            LogError( ( "Failed to initialize PKCS11, exiting" ) );
+            xDemoStatus = pdFAIL;
+        }
     }
 
     /****************************** Init MQTT ******************************/
