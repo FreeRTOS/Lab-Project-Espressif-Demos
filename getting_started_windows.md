@@ -418,7 +418,15 @@ idf.py flash monitor
 ```
 The output should look like the following:
 ```
-TODO
+...
+Current State=[WaitingForJob], Event=[ReceivedJobDocument], New state=[CreatingFile]
+Received: 0   Queued: 0   Processed: 0   Dropped: 0
+Received: 0   Queued: 0   Processed: 0   Dropped: 0
+Received: 0   Queued: 0   Processed: 0   Dropped: 0
+Received: 0   Queued: 0   Processed: 0   Dropped: 0
+Received: 0   Queued: 0   Processed: 0   Dropped: 0
+Received: 0   Queued: 0   Processed: 0   Dropped: 0
+...
 ```
 
 ## Prepare patch
@@ -558,7 +566,8 @@ rm "ota_update_job.json"
 ```
 
 6. The device should receive the OTA update and the output on the device
-terminal should look like the following:
+terminal should containt the line showing the application version as
+`0.9.3`:
 ```
-TODO
+OTA over MQTT demo, Application version 0.9.3
 ```
