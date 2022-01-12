@@ -1010,7 +1010,7 @@ static uint32_t prvGetRunningPartitionSize( void )
         data.image_len = 0;
     }
 
-    return data.image_len;
+    return data.image_len + sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
 }
 
 /* Apply patch.*/
