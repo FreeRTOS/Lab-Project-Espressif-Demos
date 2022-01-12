@@ -16,6 +16,21 @@ to setup AWS CLI.
 Download the JojoDiff Utility from [here](https://sourceforge.net/projects/jojodiff/files/jojodiff/jojodiff07/)
 and extract it to `C:\jojodiff07`.
 
+## Clone Source Code
+To clone using HTTPS:
+```
+git clone https://github.com/FreeRTOS/Labs-Project-Espressif-Demos.git --recurse-submodules
+```
+Using SSH:
+```
+git clone git@github.com:FreeRTOS/Labs-Project-Espressif-Demos.git --recurse-submodules
+```
+
+If you have downloaded the repo without using the `--recurse-submodules` argument, you need to run:
+```
+git submodule update --init --recursive
+```
+
 # Instructions
 The following instructions are written for Power Shell on Windows. Execute
 all the commands from the `Labs-Project-Espressif-Demos\demos\delta_ota` directory.
@@ -26,21 +41,18 @@ Set some variables which are used in later commands. Execute the
 following commands after replacing the values in angle brackets:
 
 * <delta_ota_bucket_name> - Name of the Amazon S3 bucket to store your update.
+* <delta_ota_thing_name> - Thing name used in the demo.
 * <delta_ota_aws_region> - AWS region in which all the AWS resources are created.
 The same region must be configured as the AWS CLI default region.
 * <delta_ota_aws_account_id> - AWS account ID.
-* <delta_ota_role_name> - Name of the IAM role created which OTA Update service
-assumes to create and manage OTA update jobs.
 * <delta_ota_common_name> - Common Name used in the signer certificate.
-* <delta_ota_thing_name> - Thing name used in the demo.
 
 ```ps
 $DELTA_OTA_BUCKET_NAME="<delta_ota_bucket_name>"
+$DELTA_OTA_THING_NAME="<delta_ota_thing_name>"
 $DELTA_OTA_AWS_REGION="<delta_ota_aws_region>"
 $DELTA_OTA_AWS_ACCOUNT_ID="<delta_ota_aws_account_id>"
-$DELTA_OTA_ROLE_NAME="<delta_ota_role_name>"
 $DELTA_OTA_COMMON_NAME="<delta_ota_common_name>"
-$DELTA_OTA_THING_NAME="<delta_ota_thing_name>"
 ```
 
 Example:
@@ -48,7 +60,6 @@ Example:
 $DELTA_OTA_BUCKET_NAME="delta-ota-demo"
 $DELTA_OTA_AWS_REGION="us-west-2"
 $DELTA_OTA_AWS_ACCOUNT_ID="1234567890"
-$DELTA_OTA_ROLE_NAME="delta-ota-role"
 $DELTA_OTA_COMMON_NAME="abc@xyz.com"
 $DELTA_OTA_THING_NAME="delta-ota-thing"
 ```
@@ -91,7 +102,7 @@ $ota_role_policy = $ota_role_policy | ConvertFrom-JSON
 $ota_role_policy | ConvertTo-Json -depth 100 | Out-File "ota_role_policy.json"
 
 $response = aws iam create-role `
-                --role-name $DELTA_OTA_ROLE_NAME `
+                --role-name $DELTA_OTA_THING_NAME-role `
                 --assume-role-policy-document file://ota_role_policy.json
 
 $response = $response | ConvertFrom-Json
@@ -105,7 +116,7 @@ rm "ota_role_policy.json"
 
 ```ps
 aws iam attach-role-policy `
-    --role-name delta-ota-role `
+    --role-name $DELTA_OTA_THING_NAME-role `
     --policy-arn arn:aws:iam::aws:policy/service-role/AmazonFreeRTOSOTAUpdate
 ```
 
@@ -133,8 +144,8 @@ $ota_role_iam_policy = $ota_role_iam_policy | ConvertFrom-JSON
 $ota_role_iam_policy | ConvertTo-Json -depth 100 | Out-File "ota_role_iam_policy.json"
 
 aws iam put-role-policy `
-    --role-name $DELTA_OTA_ROLE_NAME `
-    --policy-name $DELTA_OTA_ROLE_NAME-iam-policy `
+    --role-name $DELTA_OTA_THING_NAME-role `
+    --policy-name $DELTA_OTA_THING_NAME-role-iam-policy `
     --policy-document file://ota_role_iam_policy.json
 
 rm "ota_role_iam_policy.json"
@@ -167,8 +178,8 @@ $ota_role_s3_policy = $ota_role_s3_policy | ConvertFrom-JSON
 $ota_role_s3_policy | ConvertTo-Json -depth 100 | Out-File "ota_role_s3_policy.json"
 
 aws iam put-role-policy `
-    --role-name $DELTA_OTA_ROLE_NAME `
-    --policy-name $DELTA_OTA_ROLE_NAME-s3-policy `
+    --role-name $DELTA_OTA_THING_NAME-role `
+    --policy-name $DELTA_OTA_THING_NAME-role-s3-policy `
     --policy-document file://ota_role_s3_policy.json
 
 rm "ota_role_s3_policy.json"
@@ -218,6 +229,11 @@ $response = aws acm import-certificate `
 $response = $response | ConvertFrom-Json
 
 $DELTA_OTA_SIGNER_CERT_ARN = $response.CertificateArn
+```
+
+5. Delete the certificate config file created in step 1:
+```ps
+rm "cert_config.txt"
 ```
 
 ## Create Thing and Device Credentials
@@ -287,6 +303,8 @@ $ota_device_policy | ConvertTo-Json -depth 100 | Out-File "ota_device_policy.jso
 aws iot create-policy `
     --policy-name $DELTA_OTA_THING_NAME-policy `
     --policy-document file://ota_device_policy.json
+
+rm "ota_device_policy.json"
 ```
 
 4. Attach policy to the certificate:
@@ -319,13 +337,13 @@ $DELTA_OTA_AWS_IOT_ENDPOINT = $response.endpointAddress
 $signer_cert_content = Get-Content ecdsasigner.crt | foreach {'"' + $_ +  '\n" \'}
 $signer_cert_content | Set-Content ecdsasigner.crt.tmp
 $signer_cert_content = Get-Content -raw ecdsasigner.crt.tmp
-$signer_cert_content = $signer_cert_content.Substring(0, $signer_cert_content.LastIndexOf('\'))
+$signer_cert_content = $signer_cert_content.Substring(0, $signer_cert_content.LastIndexOf(' \'))
 rm ecdsasigner.crt.tmp
 
 $ota_demo_config_content = Get-Content .\config\ota_demo_config.h
 
 $find = $ota_demo_config_content | Select-String '#define otapalconfigCODE_SIGNING_CERTIFICATE' | Select-Object -ExpandProperty Line
-$replace = "#define keyCLIENT_CERTIFICATE_PEM \ `r`n $signer_cert_content"
+$replace = "#define otapalconfigCODE_SIGNING_CERTIFICATE \`r`n $signer_cert_content"
 $ota_demo_config_content = $ota_demo_config_content | ForEach-Object {$_ -replace $find, $replace}
 
 $ota_demo_config_content | Set-Content .\config\ota_demo_config.h
@@ -336,23 +354,23 @@ $ota_demo_config_content | Set-Content .\config\ota_demo_config.h
 $device_cert_content = Get-Content device.cert.pem | foreach {'"' + $_ +  '\n" \'}
 $device_cert_content | Set-Content device.cert.pem.tmp
 $device_cert_content = Get-Content -raw device.cert.pem.tmp
-$device_cert_content = $device_cert_content.Substring(0, $device_cert_content.LastIndexOf('\'))
+$device_cert_content = $device_cert_content.Substring(0, $device_cert_content.LastIndexOf(' \'))
 rm device.cert.pem.tmp
 
 $device_key_content = Get-Content device.private.key | foreach {'"' + $_ +  '\n" \'}
 $device_key_content | Set-Content device.private.keytmp
 $device_key_content = Get-Content -raw device.private.keytmp
-$device_key_content = $device_key_content.Substring(0, $device_key_content.LastIndexOf('\'))
+$device_key_content = $device_key_content.Substring(0, $device_key_content.LastIndexOf(' \'))
 rm device.private.keytmp
 
 $aws_clientcredential_keys_content = Get-Content .\config\aws_clientcredential_keys.h
 
 $find = $aws_clientcredential_keys_content | Select-String '#define keyCLIENT_CERTIFICATE_PEM' | Select-Object -ExpandProperty Line
-$replace = "#define keyCLIENT_CERTIFICATE_PEM \ `r`n $device_cert_content"
+$replace = "#define keyCLIENT_CERTIFICATE_PEM \`r`n $device_cert_content"
 $aws_clientcredential_keys_content = $aws_clientcredential_keys_content | ForEach-Object {$_ -replace $find, $replace}
 
 $find = $aws_clientcredential_keys_content | Select-String '#define keyCLIENT_PRIVATE_KEY_PEM' | Select-Object -ExpandProperty Line
-$replace = "#define keyCLIENT_PRIVATE_KEY_PEM \ `r`n $device_key_content"
+$replace = "#define keyCLIENT_PRIVATE_KEY_PEM \`r`n $device_key_content"
 $aws_clientcredential_keys_content = $aws_clientcredential_keys_content | ForEach-Object {$_ -replace $find, $replace}
 
 $aws_clientcredential_keys_content | Set-Content .\config\aws_clientcredential_keys.h
@@ -363,11 +381,11 @@ $aws_clientcredential_keys_content | Set-Content .\config\aws_clientcredential_k
 $aws_clientcredential_content = Get-Content .\config\aws_clientcredential.h
 
 $find = $aws_clientcredential_content | Select-String '#define clientcredentialIOT_THING_NAME' | Select-Object -ExpandProperty Line
-$replace = "#define clientcredentialIOT_THING_NAME $DELTA_OTA_THING_NAME"
+$replace = "#define clientcredentialIOT_THING_NAME `"$DELTA_OTA_THING_NAME`""
 $aws_clientcredential_content = $aws_clientcredential_content | ForEach-Object {$_ -replace $find, $replace}
 
 $find = $aws_clientcredential_content | Select-String '#define clientcredentialMQTT_BROKER_ENDPOINT' | Select-Object -ExpandProperty Line
-$replace = "#define clientcredentialMQTT_BROKER_ENDPOINT $DELTA_OTA_AWS_IOT_ENDPOINT"
+$replace = "#define clientcredentialMQTT_BROKER_ENDPOINT `"$DELTA_OTA_AWS_IOT_ENDPOINT`""
 $aws_clientcredential_content = $aws_clientcredential_content | ForEach-Object {$_ -replace $find, $replace}
 
 $aws_clientcredential_content | Set-Content .\config\aws_clientcredential.h
@@ -391,7 +409,6 @@ idf.py build
 ```ps
 mkdir current_firmware
 cp .\build\delta-ota.bin .\current_firmware\
-
 ```
 
 3. Flash [Run the following command in a separate terminal so that we
@@ -407,6 +424,17 @@ TODO
 ## Prepare patch
 
 1. Update firmware version in code.
+```ps
+$ota_demo_config_content = Get-Content .\config\ota_demo_config.h
+
+$find = $ota_demo_config_content | Select-String '#define APP_VERSION_BUILD' | Select-Object -ExpandProperty Line
+$current_version_number = $find -replace "[^0-9]" , ''
+$next_version_number = [int]$current_version_number + 1
+$replace = "#define APP_VERSION_BUILD $next_version_number"
+$ota_demo_config_content = $ota_demo_config_content | ForEach-Object {$_ -replace $find, $replace}
+
+$ota_demo_config_content | Set-Content .\config\ota_demo_config.h
+```
 
 2. Build new firmware:
 ```ps
@@ -435,10 +463,10 @@ aws s3 cp .\patch\delta-ota.patch s3://$DELTA_OTA_BUCKET_NAME/
 2. Create a signing profile:
 ```ps
 aws signer put-signing-profile `
-    --profile-name $DELTA_OTA_THING_NAME-signing-profile `
+    --profile-name delta_ota_signing_profile `
     --signing-material certificateArn=$DELTA_OTA_SIGNER_CERT_ARN `
     --platform AmazonFreeRTOS-Default `
-    --signing-parameters certname=ota
+    --signing-parameters certname=P11_CSK
 ```
 
 3. Start signing job:
@@ -453,9 +481,9 @@ $response = $response | ConvertFrom-Json
 $version_id = $response.Versions[0].VersionId
 
 $response =   aws signer start-signing-job `
-                --source 's3={bucketName=$DELTA_OTA_BUCKET_NAME,key=delta-ota.patch,version=$version_id}' `
-                --destination 's3={bucketName=$DELTA_OTA_BUCKET_NAME}' `
-                --profile-name $DELTA_OTA_THING_NAME-signing-profile
+                --source "s3={bucketName=$DELTA_OTA_BUCKET_NAME,key=delta-ota.patch,version=$version_id}" `
+                --destination "s3={bucketName=$DELTA_OTA_BUCKET_NAME}" `
+                --profile-name delta_ota_signing_profile
 
 $response = $response | ConvertFrom-Json
 
@@ -478,7 +506,7 @@ $ota_stream = @"
 
 $ota_stream = $ota_stream | ConvertFrom-JSON
 
-$ota_stream | ConvertTo-Json -depth 100 | Out-File "ota_stream.json"
+$ota_stream | ConvertTo-Json -depth 100 -AsArray | Out-File "ota_stream.json"
 
 aws iot create-stream `
     --stream-id $DELTA_OTA_THING_NAME-stream `
