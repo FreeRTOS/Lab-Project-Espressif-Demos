@@ -48,7 +48,7 @@ The same region must be configured as the AWS CLI default region.
 * <delta_ota_aws_account_id> - AWS account ID.
 * <delta_ota_common_name> - Common Name used in the signer certificate.
 
-```ps
+```powershell
 $DELTA_OTA_BUCKET_NAME="<delta_ota_bucket_name>"
 $DELTA_OTA_THING_NAME="<delta_ota_thing_name>"
 $DELTA_OTA_AWS_REGION="<delta_ota_aws_region>"
@@ -57,7 +57,7 @@ $DELTA_OTA_COMMON_NAME="<delta_ota_common_name>"
 ```
 
 Example:
-```ps
+```powershell
 $DELTA_OTA_BUCKET_NAME="delta-ota-demo"
 $DELTA_OTA_AWS_REGION="us-west-2"
 $DELTA_OTA_AWS_ACCOUNT_ID="1234567890"
@@ -69,7 +69,7 @@ $DELTA_OTA_THING_NAME="delta-ota-thing"
 
 1. Create the bucket:
 
-```ps
+```powershell
 aws s3api create-bucket `
     --bucket $DELTA_OTA_BUCKET_NAME `
     --region $DELTA_OTA_AWS_REGION `
@@ -78,7 +78,7 @@ aws s3api create-bucket `
 
 2. Enable versioning for the bucket:
 
-```ps
+```powershell
 aws s3api put-bucket-versioning `
     --bucket $DELTA_OTA_BUCKET_NAME `
     --versioning-configuration Status=Enabled
@@ -88,7 +88,7 @@ aws s3api put-bucket-versioning `
 
 1. Create the role:
 
-```ps
+```powershell
 $ota_role_policy = @"
 {
     "Version": "2012-10-17",
@@ -117,7 +117,7 @@ rm "ota_role_policy.json"
 
 2. Add OTA update permissions to your OTA service role:
 
-```ps
+```powershell
 aws iam attach-role-policy `
     --role-name $DELTA_OTA_THING_NAME-role `
     --policy-arn arn:aws:iam::aws:policy/service-role/AmazonFreeRTOSOTAUpdate
@@ -125,7 +125,7 @@ aws iam attach-role-policy `
 
 3. Add the required IAM permissions to your OTA service role:
 
-```ps
+```powershell
 $ota_role_iam_policy = @"
 {
     "Version": "2012-10-17",
@@ -156,7 +156,7 @@ rm "ota_role_iam_policy.json"
 
 4. Add the required Amazon S3 permissions to your OTA service role:
 
-```ps
+```powershell
 $ota_role_s3_policy = @"
 {
     "Version": "2012-10-17",
@@ -194,7 +194,7 @@ at the following location: `C:\Program Files\Git\usr\bin\openssl.exe`.
 
 1. Create a certificate config file:
 
-```ps
+```powershell
 $cert_config = @"
 [ req ]
 prompt             = no
@@ -213,19 +213,19 @@ $cert_config | Out-File "cert_config.txt"
 
 2. Create an ECDSA code-signing private key:
 
-```ps
+```powershell
 .'C:\Program Files\Git\usr\bin\openssl.exe' genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -pkeyopt ec_param_enc:named_curve -outform PEM -out ecdsasigner.key
 ```
 
 3. Create an ECDSA code-signing certificate:
 
-```ps
+```powershell
 .'C:\Program Files\Git\usr\bin\openssl.exe' req -new -x509 -config cert_config.txt -extensions my_exts -nodes -days 365 -key ecdsasigner.key -out ecdsasigner.crt
 ```
 
 4. Import the code-signing certificate, private key, and certificate chain into AWS Certificate Manager:
 
-```ps
+```powershell
 $response = aws acm import-certificate `
                 --certificate fileb://ecdsasigner.crt `
                 --private-key fileb://ecdsasigner.key
@@ -237,7 +237,7 @@ $DELTA_OTA_SIGNER_CERT_ARN = $response.CertificateArn
 
 5. Delete the certificate config file created in step 1:
 
-```ps
+```powershell
 rm "cert_config.txt"
 ```
 
@@ -245,7 +245,7 @@ rm "cert_config.txt"
 
 1. Create a thing:
 
-```ps
+```powershell
 $response = aws iot create-thing --thing-name $DELTA_OTA_THING_NAME
 
 $response = $response | ConvertFrom-Json
@@ -255,7 +255,7 @@ $DELTA_OTA_THING_ARN = $response.thingArn
 
 2. Create Certificate and Keys:
 
-```ps
+```powershell
 $response = aws iot create-keys-and-certificate `
                 --set-as-active `
                 --certificate-pem-outfile "device.cert.pem" `
@@ -270,7 +270,7 @@ $DELTA_OTA_DEVICE_CERT_ID = $response.certificateId
 
 3. Create device policy:
 
-```ps
+```powershell
 $ota_device_policy = @"
 {
     "Version": "2012-10-17",
@@ -316,7 +316,7 @@ rm "ota_device_policy.json"
 
 4. Attach policy to the certificate:
 
-```ps
+```powershell
 aws iot attach-policy `
     --policy-name $DELTA_OTA_THING_NAME-policy `
     --target $DELTA_OTA_DEVICE_CERT_ARN
@@ -324,7 +324,7 @@ aws iot attach-policy `
 
 5. Attach certificate to the thing:
 
-```ps
+```powershell
 aws iot attach-thing-principal `
     --thing-name $DELTA_OTA_THING_NAME `
     --principal $DELTA_OTA_DEVICE_CERT_ARN
@@ -332,7 +332,7 @@ aws iot attach-thing-principal `
 
 6. Get AWS IoT endpoint:
 
-```ps
+```powershell
 $response =  aws iot describe-endpoint --endpoint-type iot:Data-ATS
 
 $response = $response | ConvertFrom-Json
@@ -344,7 +344,7 @@ $DELTA_OTA_AWS_IOT_ENDPOINT = $response.endpointAddress
 
 1. Set signer cert:
 
-```ps
+```powershell
 $signer_cert_content = Get-Content ecdsasigner.crt | foreach {'"' + $_ +  '\n" \'}
 $signer_cert_content | Set-Content ecdsasigner.crt.tmp
 $signer_cert_content = Get-Content -raw ecdsasigner.crt.tmp
@@ -362,7 +362,7 @@ $ota_demo_config_content | Set-Content .\config\ota_demo_config.h
 
 2. Set device cert and private key:
 
-```ps
+```powershell
 $device_cert_content = Get-Content device.cert.pem | foreach {'"' + $_ +  '\n" \'}
 $device_cert_content | Set-Content device.cert.pem.tmp
 $device_cert_content = Get-Content -raw device.cert.pem.tmp
@@ -390,7 +390,7 @@ $aws_clientcredential_keys_content | Set-Content .\config\aws_clientcredential_k
 
 3. Set thing name and AWS IoT endpoint:
 
-```ps
+```powershell
 $aws_clientcredential_content = Get-Content .\config\aws_clientcredential.h
 
 $find = $aws_clientcredential_content | Select-String '#define clientcredentialIOT_THING_NAME' | Select-Object -ExpandProperty Line
@@ -406,7 +406,7 @@ $aws_clientcredential_content | Set-Content .\config\aws_clientcredential.h
 
 4. Setup WiFi credentials:
 
-```ps
+```powershell
 idf.py menuconfig
 ```
 Choose `Example Connection Configuration --> WiFi SSID` for setting WiFi SSID and
@@ -416,13 +416,13 @@ Choose `Example Connection Configuration --> WiFi SSID` for setting WiFi SSID an
 
 1. Build:
 
-```ps
+```powershell
 idf.py build
 ```
 
 2. Copy the initial firmware in a separate directory for later use:
 
-```ps
+```powershell
 mkdir current_firmware
 cp .\build\delta-ota.bin .\current_firmware\
 ```
@@ -430,7 +430,7 @@ cp .\build\delta-ota.bin .\current_firmware\
 3. Flash [Run the following command in a separate terminal so that we
    can still use our variables in this shell]:
 
-```ps
+```powershell
 idf.py flash monitor
 ```
 
@@ -451,7 +451,7 @@ Received: 0   Queued: 0   Processed: 0   Dropped: 0
 
 1. Update firmware version in code:
 
-```ps
+```powershell
 $ota_demo_config_content = Get-Content .\config\ota_demo_config.h
 
 $find = $ota_demo_config_content | Select-String '#define APP_VERSION_BUILD' | Select-Object -ExpandProperty Line
@@ -465,20 +465,20 @@ $ota_demo_config_content | Set-Content .\config\ota_demo_config.h
 
 2. Build new firmware:
 
-```ps
+```powershell
 idf.py build
 ```
 
 3. Copy the new firmware in a separate directory for later use:
 
-```ps
+```powershell
 mkdir new_firmware
 cp .\build\delta-ota.bin .\new_firmware\
 ```
 
 4. Create patch:
 
-```ps
+```powershell
 mkdir patch
 .'C:\jojodiff07\win32\jdiff.exe' .\current_firmware\delta-ota.bin .\new_firmware\delta-ota.bin .\patch\delta-ota.patch
 ```
@@ -487,13 +487,13 @@ mkdir patch
 
 1. Upload the patch file to S3:
 
-```ps
+```powershell
 aws s3 cp .\patch\delta-ota.patch s3://$DELTA_OTA_BUCKET_NAME/
 ```
 
 2. Create a signing profile:
 
-```ps
+```powershell
 aws signer put-signing-profile `
     --profile-name delta_ota_signing_profile `
     --signing-material certificateArn=$DELTA_OTA_SIGNER_CERT_ARN `
@@ -503,7 +503,7 @@ aws signer put-signing-profile `
 
 3. Start signing job:
 
-```ps
+```powershell
 $response =  aws s3api list-object-versions `
                 --bucket $DELTA_OTA_BUCKET_NAME `
                 --prefix delta-ota.patch `
@@ -525,7 +525,7 @@ $DELTA_OTA_SIGNING_JOB_ID = $response.jobId
 
 4. Create a stream:
 
-```ps
+```powershell
 $ota_stream = @"
 [
   {
@@ -553,7 +553,7 @@ rm "ota_stream.json"
 
 5. Create OTA update job:
 
-```ps
+```powershell
 $ota_update_job = @"
 {
     "otaUpdateId": "$DELTA_OTA_THING_NAME-delta-ota",
