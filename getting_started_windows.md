@@ -21,6 +21,7 @@ To clone using HTTPS:
 ```
 git clone https://github.com/FreeRTOS/Labs-Project-Espressif-Demos.git --recurse-submodules
 ```
+
 Using SSH:
 ```
 git clone git@github.com:FreeRTOS/Labs-Project-Espressif-Demos.git --recurse-submodules
@@ -67,6 +68,7 @@ $DELTA_OTA_THING_NAME="delta-ota-thing"
 ## Create an Amazon S3 bucket to store your update
 
 1. Create the bucket:
+
 ```ps
 aws s3api create-bucket `
     --bucket $DELTA_OTA_BUCKET_NAME `
@@ -75,6 +77,7 @@ aws s3api create-bucket `
 ```
 
 2. Enable versioning for the bucket:
+
 ```ps
 aws s3api put-bucket-versioning `
     --bucket $DELTA_OTA_BUCKET_NAME `
@@ -190,6 +193,7 @@ We are using the `openssl.exe` installed with Git. It is usually installed
 at the following location: `C:\Program Files\Git\usr\bin\openssl.exe`.
 
 1. Create a certificate config file:
+
 ```ps
 $cert_config = @"
 [ req ]
@@ -232,6 +236,7 @@ $DELTA_OTA_SIGNER_CERT_ARN = $response.CertificateArn
 ```
 
 5. Delete the certificate config file created in step 1:
+
 ```ps
 rm "cert_config.txt"
 ```
@@ -239,6 +244,7 @@ rm "cert_config.txt"
 ## Create Thing and Device Credentials
 
 1. Create a thing:
+
 ```ps
 $response = aws iot create-thing --thing-name $DELTA_OTA_THING_NAME
 
@@ -248,6 +254,7 @@ $DELTA_OTA_THING_ARN = $response.thingArn
 ```
 
 2. Create Certificate and Keys:
+
 ```ps
 $response = aws iot create-keys-and-certificate `
                 --set-as-active `
@@ -308,6 +315,7 @@ rm "ota_device_policy.json"
 ```
 
 4. Attach policy to the certificate:
+
 ```ps
 aws iot attach-policy `
     --policy-name $DELTA_OTA_THING_NAME-policy `
@@ -315,6 +323,7 @@ aws iot attach-policy `
 ```
 
 5. Attach certificate to the thing:
+
 ```ps
 aws iot attach-thing-principal `
     --thing-name $DELTA_OTA_THING_NAME `
@@ -322,6 +331,7 @@ aws iot attach-thing-principal `
 ```
 
 6. Get AWS IoT endpoint:
+
 ```ps
 $response =  aws iot describe-endpoint --endpoint-type iot:Data-ATS
 
@@ -332,7 +342,8 @@ $DELTA_OTA_AWS_IOT_ENDPOINT = $response.endpointAddress
 
 ## Setup Credentials in Code
 
-1. Set signer cert.
+1. Set signer cert:
+
 ```ps
 $signer_cert_content = Get-Content ecdsasigner.crt | foreach {'"' + $_ +  '\n" \'}
 $signer_cert_content | Set-Content ecdsasigner.crt.tmp
@@ -349,7 +360,8 @@ $ota_demo_config_content = $ota_demo_config_content | ForEach-Object {$_ -replac
 $ota_demo_config_content | Set-Content .\config\ota_demo_config.h
 ```
 
-2. Set device cert and private key.
+2. Set device cert and private key:
+
 ```ps
 $device_cert_content = Get-Content device.cert.pem | foreach {'"' + $_ +  '\n" \'}
 $device_cert_content | Set-Content device.cert.pem.tmp
@@ -377,6 +389,7 @@ $aws_clientcredential_keys_content | Set-Content .\config\aws_clientcredential_k
 ```
 
 3. Set thing name and AWS IoT endpoint:
+
 ```ps
 $aws_clientcredential_content = Get-Content .\config\aws_clientcredential.h
 
@@ -391,7 +404,8 @@ $aws_clientcredential_content = $aws_clientcredential_content | ForEach-Object {
 $aws_clientcredential_content | Set-Content .\config\aws_clientcredential.h
 ```
 
-4. Setup WiFi credentials.
+4. Setup WiFi credentials:
+
 ```ps
 idf.py menuconfig
 ```
@@ -401,11 +415,13 @@ Choose `Example Connection Configuration --> WiFi SSID` for setting WiFi SSID an
 ## Install the initial version of firmware
 
 1. Build:
+
 ```ps
 idf.py build
 ```
 
 2. Copy the initial firmware in a separate directory for later use:
+
 ```ps
 mkdir current_firmware
 cp .\build\delta-ota.bin .\current_firmware\
@@ -413,9 +429,11 @@ cp .\build\delta-ota.bin .\current_firmware\
 
 3. Flash [Run the following command in a separate terminal so that we
    can still use our variables in this shell]:
+
 ```ps
 idf.py flash monitor
 ```
+
 The output should look like the following:
 ```
 ...
@@ -431,7 +449,8 @@ Received: 0   Queued: 0   Processed: 0   Dropped: 0
 
 ## Prepare patch
 
-1. Update firmware version in code.
+1. Update firmware version in code:
+
 ```ps
 $ota_demo_config_content = Get-Content .\config\ota_demo_config.h
 
@@ -445,30 +464,35 @@ $ota_demo_config_content | Set-Content .\config\ota_demo_config.h
 ```
 
 2. Build new firmware:
+
 ```ps
 idf.py build
 ```
+
 3. Copy the new firmware in a separate directory for later use:
+
 ```ps
 mkdir new_firmware
 cp .\build\delta-ota.bin .\new_firmware\
 ```
 
 4. Create patch:
+
 ```ps
 mkdir patch
 .'C:\jojodiff07\win32\jdiff.exe' .\current_firmware\delta-ota.bin .\new_firmware\delta-ota.bin .\patch\delta-ota.patch
-
 ```
 
 ## Create an OTA update
 
 1. Upload the patch file to S3:
+
 ```ps
 aws s3 cp .\patch\delta-ota.patch s3://$DELTA_OTA_BUCKET_NAME/
 ```
 
 2. Create a signing profile:
+
 ```ps
 aws signer put-signing-profile `
     --profile-name delta_ota_signing_profile `
@@ -478,6 +502,7 @@ aws signer put-signing-profile `
 ```
 
 3. Start signing job:
+
 ```ps
 $response =  aws s3api list-object-versions `
                 --bucket $DELTA_OTA_BUCKET_NAME `
@@ -499,6 +524,7 @@ $DELTA_OTA_SIGNING_JOB_ID = $response.jobId
 ```
 
 4. Create a stream:
+
 ```ps
 $ota_stream = @"
 [
@@ -524,6 +550,7 @@ aws iot create-stream `
 
 rm "ota_stream.json"
 ```
+
 5. Create OTA update job:
 
 ```ps
@@ -566,8 +593,9 @@ rm "ota_update_job.json"
 ```
 
 6. The device should receive the OTA update and the output on the device
-terminal should containt the line showing the application version as
+terminal should contain the line showing the application version as
 `0.9.3`:
+
 ```
 OTA over MQTT demo, Application version 0.9.3
 ```
