@@ -56,15 +56,15 @@ enum eObjectHandles
 };
 /*-----------------------------------------------------------*/
 
-static portMUX_TYPE s_nvs_inited_mutex = portMUX_INITIALIZER_UNLOCKED;
+static SemaphoreHandle_t s_nvs_inited_mutex = NULL;
 
 static void initialize_nvs_partition()
 {
     static bool nvs_inited;
 
-    portENTER_CRITICAL(&s_nvs_inited_mutex);
+    xSemaphoreTake( s_nvs_inited_mutex, portMAX_DELAY );
     if (nvs_inited == true) {
-        portEXIT_CRITICAL(&s_nvs_inited_mutex);
+        xSemaphoreGive( s_nvs_inited_mutex );
         return;
     }
 
@@ -107,7 +107,7 @@ static void initialize_nvs_partition()
     }
 #endif // CONFIG_NVS_ENCRYPTION
     nvs_inited = true;
-    portEXIT_CRITICAL(&s_nvs_inited_mutex);
+    xSemaphoreGive( s_nvs_inited_mutex );
 
     return;
 }
@@ -165,6 +165,7 @@ void prvLabelToFilenameHandle( uint8_t * pcLabel,
 
 CK_RV PKCS11_PAL_Initialize( void )
 {
+    s_nvs_inited_mutex = xSemaphoreCreateMutex();
     CRYPTO_Init();
     return CKR_OK;
 }
