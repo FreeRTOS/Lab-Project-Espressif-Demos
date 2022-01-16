@@ -679,6 +679,14 @@ OtaPalStatus_t otaPal_ActivateNewImage(OtaFileContext_t *const pFileContext)
             otaPal_ResetDevice(pFileContext);
         }
 
+        const esp_partition_t* running_partition = esp_ota_get_running_partition();
+        if (running_partition == NULL)
+        {
+            LogError(("esp_ota_get_running_partition failed!"));
+            esp_partition_erase_range(ota_ctx.update_partition, 0, ota_ctx.update_partition->size);
+            otaPal_ResetDevice(pFileContext);
+        }
+
         esp_err_t err = esp_ota_set_boot_partition(ota_ctx.update_partition);
 
         if (err != ESP_OK)
@@ -686,6 +694,21 @@ OtaPalStatus_t otaPal_ActivateNewImage(OtaFileContext_t *const pFileContext)
             LogError(("esp_ota_set_boot_partition failed (%d)!", err));
             esp_partition_erase_range(ota_ctx.update_partition, 0, ota_ctx.update_partition->size);
             _esp_ota_ctx_clear(&ota_ctx);
+        }
+
+        /* Mark the image as "Pending Verify" before booting the image. */
+        if (err == ESP_OK)
+        {
+            err = aws_esp_ota_set_boot_flags(ESP_OTA_IMG_PENDING_VERIFY, true);
+            if (err != ESP_OK)
+            {
+                LogError(("aws_esp_ota_set_boot_flags failed (%d)!", err));
+                esp_partition_erase_range(ota_ctx.update_partition, 0, ota_ctx.update_partition->size);
+                _esp_ota_ctx_clear(&ota_ctx);
+
+                /* Revert the boot partition so that the we boot into the old image. */
+                ( void )esp_ota_set_boot_partition(running_partition);
+            }
         }
 
         otaPal_ResetDevice(pFileContext);
