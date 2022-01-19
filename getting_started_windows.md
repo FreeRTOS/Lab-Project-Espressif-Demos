@@ -2,7 +2,7 @@
 
 ## Setup ESP-IDF
 Follow the instructions [here](https://docs.espressif.com/projects/esp-idf/en/v4.3.2/esp32/get-started/index.html)
-to setup ESP-IDF.
+to setup ESP-IDF version 4.3.2.
 
 ## Create AWS Account
 Follow the instructions [here](https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/)
@@ -10,7 +10,8 @@ to create an AWS account.
 
 ## Setup AWS CLI
 Follow the instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-to setup AWS CLI.
+to setup AWS CLI. Set the [AWS CLI output format](https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-output-format.html)
+to JSON.
 
 ## Install JojoDiff Utility
 Download the JojoDiff Utility from [here](https://sourceforge.net/projects/jojodiff/files/jojodiff/jojodiff07/)
@@ -41,12 +42,17 @@ all the commands from the `Labs-Project-Espressif-Demos\demos\delta_ota` directo
 Set some variables which are used in later commands. Execute the
 following commands after replacing the values in angle brackets:
 
-* <delta_ota_bucket_name> - Name of the Amazon S3 bucket to store your update.
-* <delta_ota_thing_name> - Thing name used in the demo.
+* <delta_ota_bucket_name> - Name of the Amazon S3 bucket to store your update. Please
+see [this page](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
+for valid bucket name rules.
+* <delta_ota_thing_name> - Thing name to be created and used in the demo.
 * <delta_ota_aws_region> - AWS region in which all the AWS resources are created.
 The same region must be configured as the AWS CLI default region.
-* <delta_ota_aws_account_id> - AWS account ID.
-* <delta_ota_common_name> - Common Name used in the signer certificate.
+* <delta_ota_aws_account_id> - AWS Account ID. See the instructions
+[here](https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html#FindingYourAWSId)
+to find your AWS Acccount ID.
+* <delta_ota_common_name> - Common Name used in the signer certificate. The Common Name (AKA CN)
+represents the server name protected by the SSL certificate. You can set it to your email.
 
 ```powershell
 $DELTA_OTA_BUCKET_NAME="<delta_ota_bucket_name>"
@@ -59,10 +65,10 @@ $DELTA_OTA_COMMON_NAME="<delta_ota_common_name>"
 Example:
 ```powershell
 $DELTA_OTA_BUCKET_NAME="delta-ota-demo"
+$DELTA_OTA_THING_NAME="delta-ota-thing"
 $DELTA_OTA_AWS_REGION="us-west-2"
 $DELTA_OTA_AWS_ACCOUNT_ID="1234567890"
 $DELTA_OTA_COMMON_NAME="abc@xyz.com"
-$DELTA_OTA_THING_NAME="delta-ota-thing"
 ```
 
 ## Create an Amazon S3 bucket to store your update
@@ -598,4 +604,8 @@ terminal should contain the line showing the application version as
 
 ```
 OTA over MQTT demo, Application version 0.9.3
+...
+Set image as valid one!
+...
+Successfully updated with the new image.
 ```
