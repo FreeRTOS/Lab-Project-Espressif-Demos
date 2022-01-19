@@ -10,7 +10,7 @@ system-on-chip (SoC).
 ## Getting Started
 
 * Windows - To get started on Windows, please follow the instructions [here](getting_started_windows.md).
-* LLinux - To get started on Linux, please follow the instructions [here](getting_started_linux.md).
+* Linux - To get started on Linux, please follow the instructions [here](getting_started_linux.md).
 
 ## Getting help
 
