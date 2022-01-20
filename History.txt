@@ -1,0 +1,6 @@
+Labs-Project-Espressif-Demos version 0.1.0 released January 19 2022
+    + Example of using the AWS IoT OTA Library for
+      Delta Over-the-Air Updates using Binary Difference mechanism.
+      The example uses the jojodiff utility and the janpatch library
+      to demonstrate Delta Over-the-Air Updates on Espressif's ESP32
+      system-on-chip (SoC).
