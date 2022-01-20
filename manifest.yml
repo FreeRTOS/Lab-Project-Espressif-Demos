@@ -1,0 +1,39 @@
+name : "Labs-Project-Espressif-Demos"
+version: "0.1.0"
+description: "Examples on Espressif's ESP32 system-on-chip (SoC)."
+
+dependencies:
+  - name: "ota-for-aws-iot-embedded-sdk"
+    version: "v3.3.0"
+    repository:
+      type: "git"
+      url: "https://github.com/aws/ota-for-aws-iot-embedded-sdk"
+      path: "libs/AWS/ota/ota-for-aws-iot-embedded-sdk"
+
+  - name: "coreMQTT-Agent"
+    version: "v1.1.0"
+    repository:
+      type: "git"
+      url: "https://github.com/FreeRTOS/coreMQTT-Agent"
+      path: "libs/FreeRTOS/coreMQTT-Agent/coreMQTT-Agent"
+
+  - name: "janpatch"
+    version: "84a5786"
+    repository:
+      type: "git"
+      url: "https://github.com/janjongboom/janpatch"
+      path: "libs/ThirdParty/janpatch/janpatch"
+
+  - name: "backoffAlgorithm"
+    version: "v1.2.0"
+    repository:
+      type: "git"
+      url: "https://github.com/FreeRTOS/backoffAlgorithm"
+      path: "libs/FreeRTOS/backoffAlgorithm/backoffAlgorithm"
+
+  - name: "corePKCS11"
+    version: "v3.4.0"
+    repository:
+      type: "git"
+      url: "https://github.com/FreeRTOS/corePKCS11.git"
+      path: "libs/FreeRTOS/corePKCS11/corePKCS11"
